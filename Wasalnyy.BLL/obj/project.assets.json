@@ -810,23 +810,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\COMPUMARTS\\.nuget\\packages\\": {},
+    "C:\\Users\\LENOVO\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\ITI Materials\\Projects\\Wasalnyy\\Wasalnyy-Backend\\Wasalnyy.BLL\\Wasalnyy.BLL.csproj",
+      "projectUniqueName": "D:\\ITI\\Final-project\\Wasalnyy-Backend\\Wasalnyy.BLL\\Wasalnyy.BLL.csproj",
       "projectName": "Wasalnyy.BLL",
-      "projectPath": "D:\\ITI Materials\\Projects\\Wasalnyy\\Wasalnyy-Backend\\Wasalnyy.BLL\\Wasalnyy.BLL.csproj",
-      "packagesPath": "C:\\Users\\COMPUMARTS\\.nuget\\packages\\",
-      "outputPath": "D:\\ITI Materials\\Projects\\Wasalnyy\\Wasalnyy-Backend\\Wasalnyy.BLL\\obj\\",
+      "projectPath": "D:\\ITI\\Final-project\\Wasalnyy-Backend\\Wasalnyy.BLL\\Wasalnyy.BLL.csproj",
+      "packagesPath": "C:\\Users\\LENOVO\\.nuget\\packages\\",
+      "outputPath": "D:\\ITI\\Final-project\\Wasalnyy-Backend\\Wasalnyy.BLL\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\COMPUMARTS\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\LENOVO\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -884,7 +884,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

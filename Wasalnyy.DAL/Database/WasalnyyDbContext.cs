@@ -1,6 +1,4 @@
-﻿using Wasalnyy.DAL.Entities;
-
-namespace Wasalnyy.DAL.Database
+﻿namespace Wasalnyy.DAL.Database
 {
     public class WasalnyyDbContext: IdentityDbContext<User>
     {
@@ -11,8 +9,7 @@ namespace Wasalnyy.DAL.Database
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
 			base.OnModelCreating(builder);
-
-            builder.Entity<Review>().HasKey(x=> new { x.RiderId, x.DriverId, x.TripId, x.ReviewerType });
+			builder.ApplyConfigurationsFromAssembly(typeof(WasalnyyDbContext).Assembly);
 		}
 
         public DbSet<User> Users {  get; set; }
@@ -20,8 +17,8 @@ namespace Wasalnyy.DAL.Database
         public DbSet<Driver> Drivers {  get; set; }
         public DbSet<Vehicle> Vehicles {  get; set; }
         public DbSet<Review> Reviews {  get; set; }
+        public DbSet<Trip> Trips {  get; set; }
         public DbSet<Zone> Zones {  get; set; }
-
 
     }
 }

@@ -32,6 +32,9 @@ namespace Wasalnyy.DAL.Entities
 		public string RiderId { get; set; }
 		public Rider Rider { get; set; }
 
-		public List<Review> Reviews { get; set; } = new List<Review>();
+        public Guid ZoneId { get; set; }
+        public Zone Zone{ get; set; }
+
+        public List<Review> Reviews { get; set; } = new List<Review>();
 	}
 }

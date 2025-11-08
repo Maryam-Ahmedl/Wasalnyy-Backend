@@ -9,7 +9,8 @@ namespace Wasalnyy.DAL.Entities
 {
 	public class Review
 	{
-		public string DriverId { get; set; }
+        public Guid Id { get; set; } 
+        public string DriverId { get; set; }
 		public Driver Driver { get; set; }
 		public string RiderId { get; set; }
 		public Rider Rider { get; set; }

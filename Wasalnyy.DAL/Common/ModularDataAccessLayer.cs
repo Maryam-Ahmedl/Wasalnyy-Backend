@@ -9,6 +9,7 @@ namespace Wasalnyy.DAL.Common
         public static IServiceCollection AddBussinessInDAL(this IServiceCollection services)
         {
             services.AddScoped<IDriverRepo, DriverRepo>();
+            services.AddScoped<IRiderRepo, RiderRepo>();
             services.AddScoped<ITripRepo, TripRepo>();
             services.AddScoped<IZoneRepo, ZoneRepo>();
             return services;

@@ -1,14 +1,16 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Wasalnyy.BLL.Enents;
 using Wasalnyy.BLL.EventHandlers.Abstraction;
 using Wasalnyy.BLL.EventHandlers.Implementation;
 using Wasalnyy.BLL.Mapper;
 using Wasalnyy.BLL.Service.Abstraction;
 using Wasalnyy.BLL.Service.Implementation;
+using Wasalnyy.BLL.Settings;
 
 namespace Wasalnyy.BLL.Common
-﻿namespace EmployeeCrud.BLL.Common
 {
     public static class ModularBussinessLogicLayer
     {
@@ -16,20 +18,26 @@ namespace Wasalnyy.BLL.Common
         {
 
             services.AddAutoMapper(x => x.AddProfile(new DomainProfile()));
+
+            // Register services
             services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<ITripService, TripService>();
             services.AddScoped<IZoneService, ZoneService>();
+            services.AddScoped<IPricingService, PricingService>();
+            services.AddScoped<IRiderService, RiderService>();
+            services.AddScoped<IRouteService, RouteService>();
 
+
+
+            // Register events and notifiers
             services.AddSingleton<DriverEvents>();
             services.AddSingleton<RiderEvents>();
             services.AddSingleton<TripEvents>();
-
             services.AddSingleton<IDriverNotifier, DriverNotifier>();
             services.AddSingleton<IRiderNotifier, RiderNotifier>();
             services.AddSingleton<ITripNotifier, TripNotifier>();
 
 
-            return services;
 			services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
 			var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
 			var key = Encoding.UTF8.GetBytes(jwtSettings!.Key);
@@ -51,7 +59,14 @@ namespace Wasalnyy.BLL.Common
 					IssuerSigningKey = new SymmetricSecurityKey(key)
 				};
 			});
-			services.AddScoped<JwtHandler>();
+
+
+            services.Configure<PricingSettings>(configuration.GetSection("PricingSettings"));
+            services.AddScoped<PricingSettings>(sp =>
+                sp.GetRequiredService<IOptions<PricingSettings>>().Value);
+
+
+            services.AddScoped<JwtHandler>();
 			services.AddScoped<IAuthService, AuthService>();
 			return services;
         }
@@ -72,7 +87,7 @@ namespace Wasalnyy.BLL.Common
             tripEvents.TripCanceled += tripHandler.OnTripCanceled;
 
 
-            driverEvents.DriverStatusChanged += DriverHandler.OnDriverStatusChanged;
+            //driverEvents.DriverStatusChanged += DriverHandler.OnDriverStatusChanged;
             driverEvents.DriverLocationUpdated += DriverHandler.OnDriverLocationUpdated;
 
 

@@ -1,15 +1,16 @@
 
-using EmployeeCrud.BLL.Common;
+using Wasalnyy.BLL.Common;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Wasalnyy.BLL.Common;
+using Wasalnyy.BLL.Settings;
+using Wasalnyy.DAL.Common;
 using Wasalnyy.DAL.Database;
 using Wasalnyy.DAL.Entities;
 using Wasalnyy.PL.Hubs;
-
-using Wasalnyy.BLL.Common;
-using Wasalnyy.DAL.Common;
 namespace Wasalnyy.PL
 {
     public class Program
@@ -18,6 +19,16 @@ namespace Wasalnyy.PL
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
             // Add services to the container.
             builder.Services.AddControllers();
             builder.Services.AddSignalR();
@@ -25,24 +36,23 @@ namespace Wasalnyy.PL
 			builder.Services.AddDbContext<WasalnyyDbContext>(options =>
 	            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,options =>
-            {
-                options.LoginPath = new PathString("/Account/Login");
-                options.AccessDeniedPath = new PathString("/Account/Login");
-            });
 
-            builder.Services.AddIdentity<User,IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
-                            .AddEntityFrameworkStores<WasalnyyDbContext>()
-                            .AddTokenProvider<DataProtectorTokenProvider<User>>(TokenOptions.DefaultProvider);
+            builder.Services.Configure<PricingSettings>(builder.Configuration.GetSection("PricingSettings"));
+            builder.Services.AddScoped<PricingSettings>(sp =>
+                sp.GetRequiredService<IOptions<PricingSettings>>().Value);
 
-            builder.Services.AddBussinessInPL(builder.Configuration);
-			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-			builder.Services.AddEndpointsApiExplorer();
+
+            builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
+                           .AddEntityFrameworkStores<WasalnyyDbContext>()
+                           .AddTokenProvider<DataProtectorTokenProvider<User>>(TokenOptions.DefaultProvider);
+
+            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            builder.Services.AddBussinessInPL();
+            builder.Services.AddBussinessInPL(builder.Configuration);
             builder.Services.AddBussinessInDAL();
+            builder.Services.AddHttpClient();
 
             var app = builder.Build();
 
@@ -68,7 +78,9 @@ namespace Wasalnyy.PL
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.MapHub<TripHub>("/ride");
+            app.MapHub<WasalnyyHub>("/Wasalnyy");
+
+
             app.MapControllers();
             app.Run();
         }

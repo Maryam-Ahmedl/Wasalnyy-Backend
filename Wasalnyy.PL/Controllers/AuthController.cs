@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Text;
 
 namespace Wasalnyy.PL.Controllers
@@ -29,12 +30,13 @@ namespace Wasalnyy.PL.Controllers
 		[HttpPost("register/driver")]
 		public async Task<IActionResult> RegisterDriver([FromBody] RegisterDriverDto dto)
 		{
+			
 			var result = await _authService.RegisterDriverAsync(dto);
 
 			if (!result.Success)
-				return BadRequest(result.Message);
+				return BadRequest(result);
 
-			return Ok(new { result.Message, result.Token });
+			return Ok(result);
 		}
 
 		[HttpPost("register/rider")]
@@ -58,7 +60,9 @@ namespace Wasalnyy.PL.Controllers
 			return Ok(result.Message);
 		}
 		[HttpPost("register/driver-face")]
-		public async Task<IActionResult> RegisterDriverFace([FromForm] RegisterDriverFaceRequestDto model)
+        [Consumes("multipart/form-data")]
+
+        public async Task<IActionResult> RegisterDriverFace([FromForm] RegisterDriverFaceRequestDto model)
 		{
 			if (model.FaceImage == null || model.FaceImage.Length == 0)
 				return BadRequest("Face image is required.");

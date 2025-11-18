@@ -37,6 +37,7 @@ namespace Wasalnyy.BLL.Common
             services.AddSingleton<IDriverNotifier, DriverNotifier>();
             services.AddSingleton<IRiderNotifier, RiderNotifier>();
             services.AddSingleton<ITripNotifier, TripNotifier>();
+            services.AddSingleton<IFaceService, FaceService>();
 
 
 			services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
@@ -69,6 +70,7 @@ namespace Wasalnyy.BLL.Common
 
             services.AddScoped<JwtHandler>();
 			services.AddScoped<IAuthService, AuthService>();
+			services.AddScoped<IEmailService, EmailService>();
 			return services;
         }
         public static IApplicationBuilder UseBussinessEventSubscriptions(this IApplicationBuilder app)

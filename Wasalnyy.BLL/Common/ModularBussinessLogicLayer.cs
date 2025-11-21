@@ -4,11 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Wasalnyy.BLL.Enents;
 using Wasalnyy.BLL.EventHandlers.Abstraction;
-using Wasalnyy.BLL.EventHandlers.Implementation;
 using Wasalnyy.BLL.Mapper;
 using Wasalnyy.BLL.Service.Abstraction;
 using Wasalnyy.BLL.Service.Implementation;
 using Wasalnyy.BLL.Settings;
+using Wasalnyy.BLL.Validators;
 
 namespace Wasalnyy.BLL.Common
 {
@@ -26,19 +26,20 @@ namespace Wasalnyy.BLL.Common
             services.AddScoped<IPricingService, PricingService>();
             services.AddScoped<IRiderService, RiderService>();
             services.AddScoped<IRouteService, RouteService>();
+            services.AddScoped<IWasalnyyHubService, WasalnyyHubService>();
             services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IPasswordService, PasswordService>();
 
+            services.AddScoped<DriverServiceValidator>();
+            services.AddScoped<TripServiceValidator>();
 
 
             // Register events and notifiers
             services.AddSingleton<DriverEvents>();
             services.AddSingleton<RiderEvents>();
             services.AddSingleton<TripEvents>();
-            services.AddSingleton<IDriverNotifier, DriverNotifier>();
-            services.AddSingleton<IRiderNotifier, RiderNotifier>();
-            services.AddSingleton<ITripNotifier, TripNotifier>();
+            services.AddSingleton<WasalnyyHubEvents>();
             services.AddSingleton<IFaceService, FaceService>();
 
 
@@ -81,9 +82,11 @@ namespace Wasalnyy.BLL.Common
 
             var tripEvents = scope.ServiceProvider.GetRequiredService<TripEvents>();
             var driverEvents = scope.ServiceProvider.GetRequiredService<DriverEvents>();
+            var wasalnyyHubEvents = scope.ServiceProvider.GetRequiredService<WasalnyyHubEvents>();
 
             var tripHandler = scope.ServiceProvider.GetRequiredService<ITripNotifier>();
-            var DriverHandler = scope.ServiceProvider.GetRequiredService<IDriverNotifier>();
+            var driverHandler = scope.ServiceProvider.GetRequiredService<IDriverNotifier>();
+            var wasalnyyHubHandler = scope.ServiceProvider.GetRequiredService<IWasalnyyHubNotifier>();
 
             tripEvents.TripRequested += tripHandler.OnTripRequested;
             tripEvents.TripAccepted += tripHandler.OnTripAccepted;
@@ -92,9 +95,18 @@ namespace Wasalnyy.BLL.Common
             tripEvents.TripCanceled += tripHandler.OnTripCanceled;
 
 
-            //driverEvents.DriverStatusChanged += DriverHandler.OnDriverStatusChanged;
-            driverEvents.DriverLocationUpdated += DriverHandler.OnDriverLocationUpdated;
 
+
+            driverEvents.DriverStatusChangedToAvailable += driverHandler.OnDriverStatusChangedToAvailable;
+            driverEvents.DriverZoneChanged += driverHandler.OnDriverZoneChanged;
+            driverEvents.DriverLocationUpdated += driverHandler.OnDriverLocationUpdated;
+            driverEvents.DriverOutOfZone += driverHandler.OnDriverOutOfZone;
+            driverEvents.DriverStatusChangedToOffline += driverHandler.OnDriverStatusChangedToOffline;
+            //driverEvents.DriverStatusChangedToInTrip += driverHandler.OnDriverStatusChangedToInTrip;
+
+
+            wasalnyyHubEvents.UserConnected += wasalnyyHubHandler.OnUserConnected;
+            wasalnyyHubEvents.UserDisconnected += wasalnyyHubHandler.OnUserDisconnected;
 
             return app;
         }

@@ -123,6 +123,16 @@ namespace Wasalnyy.DAL.Repo.Implementation
             return await _context.Trips.AsNoTracking().CountAsync(x => x.DriverId == driverId);
         }
 
+        public async Task<Trip?> GetDriverActiveTripAsync(string driverId)
+        {
+            return await _context.Trips.AsNoTracking().SingleOrDefaultAsync(x=> x.DriverId == driverId && (x.TripStatus == TripStatus.Started || x.TripStatus == TripStatus.Accepted));
+        }
+        public async Task<Trip?> GetRiderActiveTripAsync(string riderId)
+        {
+            return await _context.Trips.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.RiderId == riderId && (x.TripStatus == TripStatus.Started || x.TripStatus == TripStatus.Accepted || x.TripStatus == TripStatus.Requested ));
+        }
+
         public async Task<IEnumerable<Trip>> GetTripsByStatusAsync(TripStatus status)
         {
             return await _context.Trips

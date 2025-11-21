@@ -1,17 +1,40 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
+using Wasalnyy.BLL.Enents;
 
 namespace Wasalnyy.PL.Hubs
 {
+    [Authorize(Roles = "Driver,Rider")]
     public class WasalnyyHub : Hub
     {
-        public override Task OnConnectedAsync()
+        private readonly WasalnyyHubEvents _hubEvents;
+        public WasalnyyHub(WasalnyyHubEvents hubEvents)
         {
-            return base.OnConnectedAsync();
+            _hubEvents = hubEvents;
         }
 
-        public override Task OnDisconnectedAsync(Exception? exception)
+        public override async Task OnConnectedAsync()
         {
-            return base.OnDisconnectedAsync(exception);
+            var currentUserId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string conId = Context.ConnectionId;
+
+            if (string.IsNullOrEmpty(currentUserId) || string.IsNullOrEmpty(conId))
+                throw new UnauthorizedAccessException();
+
+            await base.OnConnectedAsync();
+
+            await _hubEvents.FireUserConnectedAsync(currentUserId, conId);
+        }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            string conId = Context.ConnectionId;
+
+            if (!string.IsNullOrEmpty(conId))
+                await _hubEvents.FireOnUserDisconnectedAsync(conId);
+
+            await base.OnDisconnectedAsync(exception);
         }
     }
 }

@@ -10,6 +10,7 @@ using Wasalnyy.BLL.DTO.Trip;
 using Wasalnyy.BLL.Enents;
 using Wasalnyy.BLL.Exceptions;
 using Wasalnyy.BLL.Service.Abstraction;
+using Wasalnyy.BLL.Validators;
 using Wasalnyy.DAL.Entities;
 using Wasalnyy.DAL.Enum;
 using Wasalnyy.DAL.Repo.Abstraction;
@@ -25,11 +26,12 @@ namespace Wasalnyy.BLL.Service.Implementation
         private readonly IRouteService _routeService;
         private readonly IPricingService _pricingService;
         private readonly IZoneService _zoneService;
+        private readonly TripServiceValidator _validator;
         private readonly IMapper _mapper;
 
         public TripService(ITripRepo tripRepo, IDriverService driverService, TripEvents tripEvents,
             IRiderService riderService, IRouteService routeService, IPricingService pricingService,
-            IZoneService zoneService, IMapper mapper)
+            IZoneService zoneService, TripServiceValidator tripServiceValidator, IMapper mapper)
         {
             _tripRepo = tripRepo;
             _driverService = driverService;
@@ -37,25 +39,37 @@ namespace Wasalnyy.BLL.Service.Implementation
             _riderService = riderService;
             _routeService = routeService;
             _pricingService = pricingService;
+            _zoneService = zoneService;
+            _validator = tripServiceValidator;
             _mapper = mapper;
         }
 
         public async Task RequestTripAsync(string riderId, RequestTripDto dto)
         {
+            _validator.ValidateRequestTrip(riderId, dto);
+
             var rider = await _riderService.GetByIdAsync(riderId);
             if(rider == null)
                 throw new NotFoundException($"Rider with ID '{riderId}' was not found.");
 
+            var riderActiveTripe = await GetRiderActiveTripAsync(riderId);
+
+            if(riderActiveTripe != null)
+                throw new AlreadyInTripException($"Rider with id {riderId} already in trip.");
+
             var trip = _mapper.Map<RequestTripDto, Trip>(dto);
 
-            var zone = await _zoneService.GetZoneAsync(trip.PickupCoordinates);
+            var pickupZone = await _zoneService.GetZoneAsync(trip.PickupCoordinates);
 
-            if (zone == null)
+            if (pickupZone == null)
                 throw new OutOfZoneException("Trip is out of zone.");
 
-            trip.ZoneId = zone.Id;
+            var distinationZone = await _zoneService.GetZoneAsync(trip.DistinationCoordinates);
 
+            if (distinationZone == null)
+                throw new OutOfZoneException("Trip is out of zone.");
 
+            trip.ZoneId = pickupZone.Id;
             trip.RiderId = riderId;
 
             (trip.DistanceKm, trip.DurationMinutes) = await _routeService.CalculateDistanceAndDurationAsync(trip.PickupCoordinates, trip.DistinationCoordinates);
@@ -69,13 +83,27 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task AcceptTripAsync(string driverId, Guid tripId)
         {
+            _validator.ValidateAcceptTrip(driverId, tripId);
+
             var trip = await _tripRepo.GetByIdAsync(tripId);
             if (trip == null)
                 throw new NotFoundException($"Trip with ID '{tripId}' was not found.");
 
+            if (trip.TripStatus != TripStatus.Requested)
+                throw new InvalidOperationException($"Trip {tripId} is not in a requestable state. Current status: {trip.TripStatus}");
+
+
+            if (!string.IsNullOrEmpty(trip.DriverId))
+                throw new TripAlreadyAssignedToDriver($"Trip with ID '{tripId}' already asigned to driver."); 
+
             var driver = await _driverService.GetByIdAsync(driverId);
             if (driver == null)
                 throw new NotFoundException($"Driver with ID '{driverId}' was not found.");
+
+            var driverActiveTrip = await GetDriverActiveTripAsync(driverId);
+
+            if (driverActiveTrip != null)
+                throw new AlreadyInTripException($"Driver with id {driverId} already in trip.");
 
             trip.DriverId = driverId;
             trip.TripStatus = TripStatus.Accepted;
@@ -83,16 +111,21 @@ namespace Wasalnyy.BLL.Service.Implementation
             await _tripRepo.UpdateTripAsync(trip);
             await _tripRepo.SaveChangesAsync();
 
-            await _driverService.SetDriverInTripAsync(driverId, tripId);
+            await _driverService.SetDriverInTripAsync(driverId);
 
             _tripEvents.FireTripAccepted(_mapper.Map<Trip, TripDto>(trip));
         }
 
-        public async Task StartTripAsyncAsync(string driverId, Guid tripId)
+        public async Task StartTripAsync(string driverId, Guid tripId)
         {
+            _validator.ValidateStartTrip(driverId, tripId);
+
             var trip = await _tripRepo.GetByIdAsync(tripId);
             if (trip == null)
                 throw new NotFoundException($"Trip with ID '{tripId}' was not found.");
+
+            if (trip.TripStatus != TripStatus.Accepted)
+                throw new InvalidOperationException($"Trip {tripId} cannot be started from status {trip.TripStatus}");
 
             var driver = await _driverService.GetByIdAsync(driverId);
             if (driver == null)
@@ -102,6 +135,9 @@ namespace Wasalnyy.BLL.Service.Implementation
                 throw new DriverMismatchException($"Driver '{driverId}' is not assigned to trip '{tripId}'.");
 
             trip.TripStatus = TripStatus.Started;
+            trip.StartDate = DateTime.UtcNow;
+
+            trip.CurrentCoordinates = driver.Coordinates;
 
             await _tripRepo.UpdateTripAsync(trip);
             await _tripRepo.SaveChangesAsync();
@@ -113,9 +149,14 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task EndTripAsync(string driverId, Guid tripId)
         {
+            _validator.ValidateEndTrip(driverId, tripId);
+
             var trip = await _tripRepo.GetByIdAsync(tripId);
             if (trip == null)
                 throw new NotFoundException($"Trip with ID '{tripId}' was not found.");
+
+            if (trip.TripStatus != TripStatus.Started)
+                throw new InvalidOperationException($"Trip {tripId} cannot be Ended from status {trip.TripStatus}");
 
             var driver = await _driverService.GetByIdAsync(driverId);
             if (driver == null)
@@ -129,13 +170,15 @@ namespace Wasalnyy.BLL.Service.Implementation
             await _tripRepo.UpdateTripAsync(trip);
             await _tripRepo.SaveChangesAsync();
 
-            await _driverService.SetDriverAvailableAsync(driverId);
+            await _driverService.SetDriverAvailableAsync(driverId, driver.Coordinates);
 
             _tripEvents.FireTripEnded(_mapper.Map<Trip, TripDto>(trip));
         }
 
         public async Task<TripPaginationDto> GetAllPaginatedAsync(Expression<Func<Trip, object>> orderBy, bool descending = false, int pageNumber = 1, int pageSize = 10)
         {
+            _validator.ValidateGetAllPaginated(orderBy, descending, pageNumber,pageSize);
+
             if (pageNumber <= 0)
                 pageNumber = 1;
 
@@ -169,6 +212,8 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task<TripPaginationDto> GetAllDriverTripsPaginatedAsync(string driverId, Expression<Func<Trip, object>> orderBy, bool descending = false, int pageNumber = 1, int pageSize = 10)
         {
+            _validator.ValidateGetAllDriverTripsPaginated(driverId, orderBy, descending, pageNumber, pageSize);
+
             if (pageNumber <= 0)
                 pageNumber = 1;
 
@@ -202,6 +247,8 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task<TripPaginationDto> GetAllRiderTripsPaginatedAsync(string riderId, Expression<Func<Trip, object>> orderBy, bool descending = false, int pageNumber = 1, int pageSize = 10)
         {
+            _validator.ValidateGetAllRiderTripsPaginated(riderId, orderBy, descending, pageNumber, pageSize);
+
             if (pageNumber <= 0)
                 pageNumber = 1;
 
@@ -235,6 +282,8 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task<TripDto?> GetByIdAsync(Guid id)
         {
+            _validator.ValidateGetById(id);
+
             var trip = await _tripRepo.GetByIdAsync(id);
             if(trip == null)
                 throw new NotFoundException($"Trip with ID '{id}' was not found.");
@@ -244,11 +293,14 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task<IEnumerable<TripDto>> GetByRequestedTripsByZoneAsync(Guid zoneId)
         {
+            _validator.ValidateGetByRequestedTripsByZone(zoneId);
             return _mapper.Map<IEnumerable<Trip>, IEnumerable<TripDto>>( await _tripRepo.GetRequestedTripsByZoneAsync(zoneId));
         }
 
         public async Task<int> GetPagesCountAsync(int pageSize = 10)
         {
+            _validator.ValidateGetPagesCount(pageSize);
+
             double noPages = Math.Ceiling((double)(await _tripRepo.GetCountAsync()) / (double)pageSize);
 
             return (int)noPages;
@@ -256,6 +308,8 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task<int> GetRiderTripsPagesCountAsync(string riderId, int pageSize = 10)
         {
+            _validator.ValidateGetRiderTripsPagesCount(riderId, pageSize);
+
             double noPages = Math.Ceiling((double)(await _tripRepo.GetRiderTripsCountAsync(riderId)) / (double)pageSize);
 
             return (int)noPages;
@@ -263,9 +317,42 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task<int> GetDriverTripsPagesCountAsync(string driverId, int pageSize = 10)
         {
+            _validator.ValidateGetDriverTripsPagesCount(driverId, pageSize);
+
             double noPages = Math.Ceiling((double)(await _tripRepo.GetDriverTripsCountAsync(driverId)) / (double)pageSize);
 
             return (int)noPages;
+        }
+
+        public async Task<TripDto?> GetDriverActiveTripAsync(string driverId)
+        {
+            _validator.ValidateGetDriverActiveTrip(driverId);
+
+            return _mapper.Map<Trip?, TripDto?>(await _tripRepo.GetDriverActiveTripAsync(driverId));
+        }
+
+        public async Task<TripDto?> GetRiderActiveTripAsync(string riderId)
+        {
+            _validator.ValidateGetRiderActiveTrip(riderId);
+
+            return _mapper.Map<Trip?, TripDto?>(await _tripRepo.GetRiderActiveTripAsync(riderId));
+        }
+
+        public async Task UpdateTripLocationAsync(Guid tripId, Coordinates coordinates)
+        {
+            _validator.ValidateUpdateTripLocation(tripId, coordinates);
+
+            var trip = await _tripRepo.GetByIdAsync(tripId);
+            if (trip == null)
+                throw new NotFoundException($"Trip with ID '{tripId}' was not found.");
+
+            if (trip.TripStatus != TripStatus.Started)
+                throw new InvalidOperationException($"Trip location cannot be updated.");
+
+            trip.CurrentCoordinates = coordinates;
+
+            await _tripRepo.UpdateTripAsync(trip);
+            await _tripRepo.SaveChangesAsync();
         }
     }
 }

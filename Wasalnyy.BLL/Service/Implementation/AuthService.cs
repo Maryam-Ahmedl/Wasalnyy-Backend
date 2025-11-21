@@ -15,6 +15,7 @@ namespace Wasalnyy.BLL.Service.Implementation
 		private readonly string BaseUrl;
 		private readonly IFaceService _faceService;
 		private readonly IUserFaceDataRepo _faceRepo;
+		private readonly IWalletRepo _walletRepo;
 		public AuthService(
 			UserManager<User> userManager,
 			JwtHandler jwtHandler,
@@ -22,7 +23,8 @@ namespace Wasalnyy.BLL.Service.Implementation
 			IEmailService emailService,
 			IConfiguration config,
 			IFaceService faceService,
-			IUserFaceDataRepo faceRepo)
+			IUserFaceDataRepo faceRepo,
+			IWalletRepo walletRepo)
 		{
 			_userManager = userManager;
 			_jwtHandler = jwtHandler;
@@ -30,7 +32,8 @@ namespace Wasalnyy.BLL.Service.Implementation
 			_emailService = emailService;
 			BaseUrl = config["BaseUrl"]!;
 			_faceRepo = faceRepo;
-			_faceService = faceService;
+            _walletRepo = walletRepo;
+            _faceService = faceService;
 		}
 		public async Task<AuthResult> RegisterDriverAsync(RegisterDriverDto dto)
 		{

@@ -1,14 +1,20 @@
+
+using Microsoft.AspNetCore.Authentication.Cookies;
 using FaceRecognitionDotNet;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Wasalnyy.BLL.Common;
+using Wasalnyy.BLL.Common;
+using Wasalnyy.BLL.EventHandlers.Abstraction;
 using Wasalnyy.BLL.Service.Implementation;
 using Wasalnyy.BLL.Settings;
 using Wasalnyy.DAL.Common;
 using Wasalnyy.DAL.Database;
 using Wasalnyy.DAL.Entities;
+using Wasalnyy.PL.EventHandlers.Implementation;
 using Wasalnyy.PL.Hubs;
+using Wasalnyy.PL.Middleware;
 namespace Wasalnyy.PL
 {
 	public class Program
@@ -17,15 +23,15 @@ namespace Wasalnyy.PL
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
-			builder.Services.AddCors(options =>
-			{
-				options.AddPolicy("AllowAll", policy =>
-				{
-					policy.AllowAnyOrigin()
-						  .AllowAnyMethod()
-						  .AllowAnyHeader();
-				});
-			});
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
 
 			// Add services to the container.
 			builder.Services.AddControllers();
@@ -64,6 +70,13 @@ namespace Wasalnyy.PL
 			builder.Services.AddBussinessInPL(builder.Configuration);
 			builder.Services.AddBussinessInDAL();
 			builder.Services.AddHttpClient();
+            builder.Services.AddSingleton<IDriverNotifier, DriverNotifier>();
+            builder.Services.AddSingleton<IRiderNotifier, RiderNotifier>();
+            builder.Services.AddSingleton<ITripNotifier, TripNotifier>();
+            builder.Services.AddSingleton<IWasalnyyHubNotifier, WasalnyyHubNotifier>();
+
+
+            builder.Services.AddHttpClient();
 
 			var app = builder.Build();
 
@@ -75,21 +88,29 @@ namespace Wasalnyy.PL
 				var userManager = services.GetRequiredService<UserManager<User>>();
 				var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-				await DbSeeder.SeedAsync(userManager, roleManager);
-			}
+                await DbSeeder.SeedAsync(userManager, roleManager);
+                
+                var connectionService = services.GetRequiredService<IWasalnyyHubService>();
+                await connectionService.DeleteAllConnectionsAsync();
+            }
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())
-			{
-				app.UseSwagger();
-				app.UseSwaggerUI();
-			}
-			app.UseHttpsRedirection();
-			app.UseAuthentication();
-			app.UseAuthorization();
-			app.UseCors("AllowAngular");
-			app.MapHub<WasalnyyHub>("/Wasalnyy");
-			app.MapControllers();
-			app.Run();
-		}
-	}
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+            app.UseHttpsRedirection();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.UseCors("AllowAngular");
+
+            app.UseStaticFiles();
+            app.UseMiddleware<ExptionhandlingMiddleware>();
+
+            app.MapHub<WasalnyyHub>("/Wasalnyy");
+
+            app.MapControllers();
+            app.Run();
+        }
+    }
 }

@@ -23,5 +23,8 @@ namespace Wasalnyy.PL.Controllers
 			var sessionUrl = await _paymentService.CreatePaymentSession(amount, "usd", successUrl, cancelUrl);
 			return Ok(new { url = sessionUrl });
 		}
+
+
+
 	}
 }

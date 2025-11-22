@@ -38,6 +38,7 @@
         public DbSet<WalletTransaction> WalletTransactions { get; set; }
         public DbSet<DriverRiderTransaction> DriverRiderTransactions { get; set; }
         public DbSet<WasalnyyHubConnection> WasalnyyHubConnections {  get; set; }
+        public DbSet<GatewayPayment> GatewayPayments { get; set; }
 
     }
 }

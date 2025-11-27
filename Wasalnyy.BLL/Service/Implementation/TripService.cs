@@ -410,7 +410,7 @@ namespace Wasalnyy.BLL.Service.Implementation
             }
 
 
-            if (trip.RiderId != userId || trip.RiderId != userId)
+            if (trip.DriverId != userId && trip.RiderId != userId)
                 throw new InvalidOperationException($"UserId did not match wiht any rider or driver");
 
             var oldStatus = trip.TripStatus;

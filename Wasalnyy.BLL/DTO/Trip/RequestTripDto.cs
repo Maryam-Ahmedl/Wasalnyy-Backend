@@ -20,5 +20,7 @@ namespace Wasalnyy.BLL.DTO.Trip
         [Required]
         [JsonPropertyName("DistinationCoordinates")]
         public Coordinates DistinationCoordinates { get; set; }
-        }
+		public string? PickUpName { get; set; }
+		public string? DestinationName { get; set; }
+	}
 }

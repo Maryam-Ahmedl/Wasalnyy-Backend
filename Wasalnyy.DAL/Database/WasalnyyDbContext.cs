@@ -1,4 +1,6 @@
-﻿namespace Wasalnyy.DAL.Database
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace Wasalnyy.DAL.Database
 {
     public class WasalnyyDbContext: IdentityDbContext<User>
     {
@@ -23,6 +25,26 @@
                 .HasForeignKey(t => t.WalletId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Entity<Complaint>()
+       .HasOne(c => c.SubmittedBy)
+       .WithMany()
+       .HasForeignKey(c => c.SubmittedById)
+       .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Complaint>()
+                .HasOne(c => c.AgainstUser)
+                .WithMany()
+                .HasForeignKey(c => c.AgainstUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Complaint>()
+                .HasOne(c => c.Trip)
+                .WithMany()
+                .HasForeignKey(c => c.TripId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            
+
 
         }
 
@@ -31,6 +53,7 @@
         public DbSet<Driver> Drivers {  get; set; }
         public DbSet<Vehicle> Vehicles {  get; set; }
         public DbSet<Review> Reviews {  get; set; }
+        public DbSet<Complaint> Complaints { get; set; }
         public DbSet<Trip> Trips {  get; set; }
         public DbSet<Zone> Zones {  get; set; }
 		public DbSet<UserFaceData> UserFaceData { get; set; }

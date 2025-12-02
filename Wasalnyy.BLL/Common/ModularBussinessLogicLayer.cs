@@ -1,14 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Wasalnyy.BLL.Enents;
-using Wasalnyy.BLL.EventHandlers.Abstraction;
-using Wasalnyy.BLL.Mapper;
-using Wasalnyy.BLL.Service;
-using Wasalnyy.BLL.Settings;
-using Wasalnyy.BLL.Validators;
-using Wasalnyy.DAL.Repo.Implementation;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Wasalnyy.BLL.Providers.Implementation;
 
 namespace Wasalnyy.BLL.Common
 {
@@ -45,7 +36,6 @@ namespace Wasalnyy.BLL.Common
             services.AddScoped<IZoneService, ZoneService>();
             services.AddScoped<IPricingService, PricingService>();
             services.AddScoped<IRiderService, RiderService>();
-            services.AddScoped<IRouteService, RouteService>();
             services.AddScoped<IWasalnyyHubService, WasalnyyHubService>();
             services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<IPaymentService, paymentGetwayService>();
@@ -54,13 +44,35 @@ namespace Wasalnyy.BLL.Common
             services.AddScoped<IChatService, ChatService>();
 
 
+            services.AddHttpClient<OsrmRouteProvider>();
+            services.AddHttpClient<OpenRouteProvider>();
+
+            services.AddScoped<IRouteService, RouteService>(sp =>
+            {
+                var validator = sp.GetRequiredService<RouteServiceValidator>();
+                var providers = new List<IRouteProvider>
+                {
+                    sp.GetRequiredService<OsrmRouteProvider>(),
+                    sp.GetRequiredService<OpenRouteProvider>()
+                };
+
+                return new RouteService(providers, validator);
+            });
+
             services.AddScoped<DriverServiceValidator>();
             services.AddScoped<TripServiceValidator>();
+            services.AddScoped<PricingServiceValidator>();
+            services.AddScoped<ZoneServiceValidator>();
+            services.AddScoped<RouteServiceValidator>();
+
+            //review complain
+            services.AddScoped<IReviewService, ReviewService>();
+            services.AddScoped<IComplaintService, ComplaintService>();
+            services.AddScoped<ReviewServiceValidator>();      
+            
 
 
-            // Register events and notifiers
             services.AddSingleton<DriverEvents>();
-            services.AddSingleton<RiderEvents>();
             services.AddSingleton<TripEvents>();
             services.AddSingleton<WasalnyyHubEvents>();
             services.AddSingleton<IFaceService, FaceService>();
@@ -120,6 +132,10 @@ namespace Wasalnyy.BLL.Common
             services.AddScoped<PricingSettings>(sp =>
                 sp.GetRequiredService<IOptions<PricingSettings>>().Value);
 
+            services.Configure<OpenRouteSettings>(configuration.GetSection("OpenRouteSettings"));
+            services.AddScoped<OpenRouteSettings>(sp =>
+                sp.GetRequiredService<IOptions<OpenRouteSettings>>().Value);
+
 
             services.AddScoped<JwtHandler>();
 			services.AddScoped<IAuthService, AuthService>();
@@ -153,16 +169,11 @@ namespace Wasalnyy.BLL.Common
             tripEvents.TripCanceled += tripHandler.OnTripCanceled;
             tripEvents.TripConfirmed += tripHandler.OnTripConfirmed;
 
-
-
-
             driverEvents.DriverStatusChangedToAvailable += driverHandler.OnDriverStatusChangedToAvailable;
             driverEvents.DriverZoneChanged += driverHandler.OnDriverZoneChanged;
             driverEvents.DriverLocationUpdated += driverHandler.OnDriverLocationUpdated;
             driverEvents.DriverOutOfZone += driverHandler.OnDriverOutOfZone;
             driverEvents.DriverStatusChangedToUnAvailable += driverHandler.OnDriverStatusChangedToUnAvailable;
-            //driverEvents.DriverStatusChangedToInTrip += driverHandler.OnDriverStatusChangedToInTrip;
-
 
             wasalnyyHubEvents.UserConnected += wasalnyyHubHandler.OnUserConnected;
             wasalnyyHubEvents.UserDisconnected += wasalnyyHubHandler.OnUserDisconnected;

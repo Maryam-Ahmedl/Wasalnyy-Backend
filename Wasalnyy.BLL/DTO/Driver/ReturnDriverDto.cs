@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Wasalnyy.BLL.DTO.Driver
+﻿namespace Wasalnyy.BLL.DTO.Driver
 {
     public class ReturnDriverDto
     {
@@ -15,5 +9,7 @@ namespace Wasalnyy.BLL.DTO.Driver
         public VehicleDto Vehicle { get; set; }
         public Coordinates? Coordinates { get; set; }
         public string DriverStatus { get; set; }
+        public string Email { get; set; }
+        public string PhoneNumber { get; set; }
     }
 }

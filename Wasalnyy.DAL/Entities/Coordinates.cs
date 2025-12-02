@@ -8,6 +8,7 @@ namespace Wasalnyy.DAL.Entities
         [Required]
         [JsonPropertyName("Lat")]
         public decimal Lat { get; set; }
+
         [Required]
         [JsonPropertyName("Lng")]
         public decimal Lng { get; set; }

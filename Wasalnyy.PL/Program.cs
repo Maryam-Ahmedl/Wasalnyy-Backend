@@ -56,32 +56,26 @@ namespace Wasalnyy.PL
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // CORS
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("CorsPolicy",
-                    policy => policy.WithOrigins("http://localhost:4200")
-                                    .AllowAnyHeader()
-                                    .AllowAnyMethod()
-                                    .AllowCredentials());
-            });
-
-            var modelPath = Path.Combine(builder.Environment.ContentRootPath, "models");
-            Console.WriteLine($"Loading face models from: {modelPath}");
-
-            builder.Services.AddSingleton(sp =>
-            {
-                return FaceRecognition.Create(modelPath);
-            });
-
-            builder.Services.AddBussinessInPL(builder.Configuration);
-            builder.Services.AddBussinessInDAL();
-            builder.Services.AddHttpClient();
-
-            builder.Services.AddSingleton<IDriverNotifier, DriverNotifier>();
-            builder.Services.AddSingleton<IRiderNotifier, RiderNotifier>();
-            builder.Services.AddSingleton<ITripNotifier, TripNotifier>();
-            builder.Services.AddSingleton<IWasalnyyHubNotifier, WasalnyyHubNotifier>();
+			builder.Services.AddCors(options =>
+			{
+				options.AddPolicy("CorsPolicy",
+					policy => policy.WithOrigins("http://localhost:4200")
+									.AllowAnyHeader()
+									.AllowAnyMethod().
+									AllowCredentials());
+			});
+			var modelPath = Path.Combine(builder.Environment.ContentRootPath, "models");
+			Console.WriteLine($"Loading face models from: {modelPath}");
+			builder.Services.AddSingleton(sp =>
+			{
+				return FaceRecognition.Create(modelPath);
+			});
+			builder.Services.AddBussinessInPL(builder.Configuration);
+			builder.Services.AddBussinessInDAL();
+			builder.Services.AddHttpClient();
+			builder.Services.AddSingleton<IDriverNotifier, DriverNotifier>();
+			builder.Services.AddSingleton<ITripNotifier, TripNotifier>();
+			builder.Services.AddSingleton<IWasalnyyHubNotifier, WasalnyyHubNotifier>();
 
             builder.Services.AddScoped<WasalnyyOnlineActionFilter>();
 

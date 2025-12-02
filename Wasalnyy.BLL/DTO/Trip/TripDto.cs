@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Wasalnyy.BLL.DTO.Trip
+﻿namespace Wasalnyy.BLL.DTO.Trip
 {
     public class TripDto
     {
@@ -19,7 +13,7 @@ namespace Wasalnyy.BLL.DTO.Trip
         public DateTime? ArrivalDate { get; set; }
         public Coordinates? CurrentCoordinates { get; set; }
         public Coordinates PickupCoordinates { get; set; }
-        public Coordinates DistinationCoordinates { get; set; }
+        public Coordinates DestinationCoordinates { get; set; }
         public string? DriverId { get; set; }
         public string RiderId { get; set; }
         public Guid ZoneId { get; set; }

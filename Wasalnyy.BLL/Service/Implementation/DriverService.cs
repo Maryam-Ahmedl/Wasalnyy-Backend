@@ -1,23 +1,4 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Wasalnyy.BLL.DTO;
-using Wasalnyy.BLL.DTO.Driver;
-using Wasalnyy.BLL.DTO.Rider;
-using Wasalnyy.BLL.Enents;
-using Wasalnyy.BLL.Exceptions;
-using Wasalnyy.BLL.Service.Abstraction;
-using Wasalnyy.BLL.Validators;
-using Wasalnyy.DAL.Entities;
-using Wasalnyy.DAL.Enum;
-using Wasalnyy.DAL.Repo.Abstraction;
-using Wasalnyy.DAL.Repo.Implementation;
-
-namespace Wasalnyy.BLL.Service.Implementation
+﻿namespace Wasalnyy.BLL.Service.Implementation
 {
     public class DriverService : IDriverService
     {
@@ -41,16 +22,13 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task<IEnumerable<ReturnDriverDto>> GetAvailableDriversByZoneAsync(Guid zoneId)
         {
-            _validator.ValidateGetAvailableDriversByZone(zoneId);
+            await _validator.ValidateGetAvailableDriversByZone(zoneId);
            return _mapper.Map< IEnumerable<Driver>, IEnumerable<ReturnDriverDto>> (await _driverRepo.GetAvailableDriversByZoneAsync(zoneId));
         }
 
         public async Task<ReturnDriverDto?> GetByIdAsync(string id)
         {
-            _validator.ValidateGetById(id);
-
-            Console.WriteLine($" Service: Looking for driver: {id}");  
-
+            await _validator.ValidateGetById(id);
             var driver = await _driverRepo.GetByIdAsync(id);
 
             Console.WriteLine($" Service: Driver found: {driver != null}");  
@@ -69,7 +47,7 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task UpdateLocationAsync(string driverId, Coordinates coordinates)
         {
-            _validator.ValidateUpdateLocation(driverId, coordinates);
+            await _validator.ValidateUpdateLocation(driverId, coordinates);
 
             var driver = await _driverRepo.GetByIdAsync (driverId);
 
@@ -79,11 +57,11 @@ namespace Wasalnyy.BLL.Service.Implementation
             var zone = await _zoneService.GetZoneAsync(coordinates);
 
             if (zone == null)
-                _driverEvents.FireDriverOutOfZone(driverId);
+                await _driverEvents.FireDriverOutOfZone(driverId);
             else
             {
                 if (driver.ZoneId != zone.Id)
-                    _driverEvents.FireDriverZoneChanged(driverId, driver.ZoneId, zone.Id);
+                    await _driverEvents.FireDriverZoneChanged(driverId, driver.ZoneId, zone.Id);
                 driver.ZoneId = zone.Id;
             }
 
@@ -92,12 +70,12 @@ namespace Wasalnyy.BLL.Service.Implementation
             await _driverRepo.UpdateAsync(driver);
             await _driverRepo.SaveChangesAsync();
 
-            _driverEvents.FireDriverLocationUpdated(driverId, coordinates);
+            await _driverEvents.FireDriverLocationUpdated(driverId, coordinates);
         }
 
         public async Task SetDriverUnAvailableAsync(string driverId)
         {
-            _validator.ValidateSetDriverOffline(driverId);
+            await _validator.ValidateSetDriverOffline(driverId);
 
             var driver = await _driverRepo.GetByIdAsync(driverId);
 
@@ -115,14 +93,14 @@ namespace Wasalnyy.BLL.Service.Implementation
             await _driverRepo.UpdateAsync(driver);
             await _driverRepo.SaveChangesAsync();
 
-            _driverEvents.FireDriverStatusChangedToUnAvailable(driverId);
+            await _driverEvents.FireDriverStatusChangedToUnAvailable(driverId);
         }
 
 
 
         public async Task SetDriverInTripAsync(string driverId)
         {
-            _validator.ValidateSetDriverInTrip(driverId);
+            await _validator.ValidateSetDriverInTrip(driverId);
 
             var driver = await _driverRepo.GetByIdAsync(driverId);
 
@@ -143,7 +121,7 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task SetDriverAvailableAsync(string driverId, Coordinates coordinates)
         {
-            _validator.ValidateSetDriverAvailable(driverId, coordinates);
+            await _validator.ValidateSetDriverAvailable(driverId, coordinates);
 
             var driver = await _driverRepo.GetByIdAsync(driverId);
 
@@ -170,7 +148,7 @@ namespace Wasalnyy.BLL.Service.Implementation
             await _driverRepo.UpdateAsync(driver);
             await _driverRepo.SaveChangesAsync();
 
-            _driverEvents.FireDriverStatusChangedToAvailable(driverId, zone.Id);
+            await _driverEvents.FireDriverStatusChangedToAvailable(driverId, zone.Id);
         }
         public async Task<bool> UpdateDriverInfo(string id, DriverUpdateDto driverUpdate)
         {

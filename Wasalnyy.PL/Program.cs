@@ -76,6 +76,7 @@ namespace Wasalnyy.PL
 			builder.Services.AddSingleton<IDriverNotifier, DriverNotifier>();
 			builder.Services.AddSingleton<ITripNotifier, TripNotifier>();
 			builder.Services.AddSingleton<IWasalnyyHubNotifier, WasalnyyHubNotifier>();
+            builder.Services.AddSingleton<IChatHubEventHandler, ChatHubEventHandler>();
 
             builder.Services.AddScoped<WasalnyyOnlineActionFilter>();
 
@@ -118,9 +119,12 @@ namespace Wasalnyy.PL
             app.UseWebSockets();
 
             app.MapHub<WasalnyyHub>("/Wasalnyy");
-            app.MapControllers();
+            app.MapHub<ChatHub>("/Chat");
 
-            app.Run();
+            app.MapControllers();
+			app.Run();
+		}
+	}
+
         }
-    }
-}
+    

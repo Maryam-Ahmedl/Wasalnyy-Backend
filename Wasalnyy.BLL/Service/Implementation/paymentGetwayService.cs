@@ -63,6 +63,8 @@ namespace Wasalnyy.BLL.Service.Implementation
 
         public async Task<RiderPaymentSuccessResponse> HandleRiderPayment(RiderPaymentDetailsDTO paymentDetails)
         {
+            
+
             if (paymentDetails.Status == PaymentStatus.Success)
                 return await HandleSuccessfulPaymentAsync(paymentDetails);
             else
@@ -74,7 +76,7 @@ namespace Wasalnyy.BLL.Service.Implementation
 
             var paymentEntity = _mapper.Map<GatewayPaymentTransactions>(paymentDetails);
 
-             var transaction =await  paymentGetwayRepo.BeginTransactionAsync();
+           using  var transaction =await  paymentGetwayRepo.BeginTransactionAsync();
             try 
             {
                 //1-check if this rider valid or not  
@@ -141,7 +143,6 @@ namespace Wasalnyy.BLL.Service.Implementation
         private async Task<RiderPaymentSuccessResponse> HandleFailedPaymentAsync(RiderPaymentDetailsDTO paymentDetails)
         {
             var paymentEntity = _mapper.Map<GatewayPaymentTransactions>(paymentDetails);
-            //save payment transaction in payment getway table as failed
             try
             {
                 await paymentGetwayRepo.AddPaymentAsync(paymentEntity);

@@ -1,4 +1,5 @@
-﻿namespace Wasalnyy.DAL.Repo.Implementation
+﻿
+namespace Wasalnyy.DAL.Repo.Implementation
 {
     public class TripRepo : ITripRepo
     {
@@ -70,11 +71,13 @@
 
         public async Task<Trip?> GetByIdAsync(Guid id)
         {
-            return await _context.Trips
+             var x= await _context.Trips
                 .Include(x => x.Driver)
                 .Include(x => x.Rider)
                 .Include(x => x.Zone)
                 .SingleOrDefaultAsync(x => x.Id == id);
+
+            return x;
         }
 
         public async Task<IEnumerable<Trip>> GetAvailableTripsByZoneAsync(Guid zoneId)
@@ -131,5 +134,10 @@
                 .Include(t => t.Rider)
                 .ToListAsync();
         }
-    }
+
+		public IQueryable<Trip> GetAllTrips()
+		{
+            return _context.Trips.AsQueryable();
+		}
+	}
 }
